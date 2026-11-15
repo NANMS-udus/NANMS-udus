@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 User-agent: *
 Allow: /
 Disallow: /members/dashboard
 
 Sitemap: https://nanms-udus.vercel.app/sitemap.xml
+=======
+just to be sure
+>>>>>>> b3ed2225777bcd3912237f582ba759355e379b1a
