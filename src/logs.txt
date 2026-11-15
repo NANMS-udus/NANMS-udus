@@ -19,4 +19,4 @@ finishing touches before release (part 2b)
 finishing touches before release (assistant ai)
 
 finishing touches before release (final 1)
-just changing config file (2).
+just changing config file.
