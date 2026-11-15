@@ -4,8 +4,6 @@ import gallery from '../../Utils/gallery'
 import { useState, useEffect } from 'react';
 
 export default function About() {
-  console.log(gallery);
-
   const [currentBg, setCurrentBg] = useState(gallery[0]?.src || '');
 
   useEffect(() => {

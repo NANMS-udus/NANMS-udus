@@ -1,5 +1,6 @@
-import { createContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { supabase } from "../Utils/supabase";
+import { UiContext } from "./UiContext";
 
 
 
@@ -8,6 +9,8 @@ export const GenContext = createContext(null)
 export default function GenCntxt({ children }) {
 
   const [members, setMembers] = useState({ all: [], displayed: [] })
+
+  const {showPop} = useContext(UiContext)
 
   const [excos, setExcos] = useState([])
 
@@ -41,7 +44,7 @@ export default function GenCntxt({ children }) {
           setMembers({ all: data, displayed: data })
         }
       } catch (error) {
-        console.log(error.message);
+        showPop('err', error.message)
       }
     }
 
@@ -94,14 +97,13 @@ export default function GenCntxt({ children }) {
         }
 
         if (!error && data) {
-          console.log(data);
           setExcos(data)
         }
 
       } catch (error) {
 
         /* to use popup */
-        console.log(error.message);
+        showPop('err', error.message)
 
       }
     }
@@ -114,7 +116,6 @@ export default function GenCntxt({ children }) {
   useEffect(() => {
     async function getNews() {
       try {
-        console.log('working');
 
         const { data, error } = await supabase.from('news').select('*')
 
@@ -124,7 +125,6 @@ export default function GenCntxt({ children }) {
         }
 
         if (!error && data) {
-          console.log(data);
 
           setNews(data)
         }
@@ -132,7 +132,7 @@ export default function GenCntxt({ children }) {
       } catch (error) {
         /* to use popup */
 
-        console.log(error.message);
+        showPop('err', error.message);
 
       }
     }
@@ -153,14 +153,13 @@ export default function GenCntxt({ children }) {
         }
 
         if (!error && data) {
-          console.log(data);
 
           setPtrns(data)
         }
 
 
       } catch (error) {
-        console.log(error.message);
+        showPop('err', error.message);
 
       }
     }
@@ -174,14 +173,13 @@ export default function GenCntxt({ children }) {
         }
 
         if (!error && data) {
-          console.log(data);
 
           setPresidents(data)
         }
 
 
       } catch (error) {
-        console.log(error.message);
+        showPop('err', error.message);
 
       }
     }
@@ -196,14 +194,13 @@ export default function GenCntxt({ children }) {
         }
 
         if (!error && data) {
-          console.log(data);
 
           setAlumni(data)
         }
 
 
       } catch (error) {
-        console.log(error.message);
+        showPop('err', error.message);
 
       }
     }

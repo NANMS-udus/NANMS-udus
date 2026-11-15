@@ -1,12 +1,29 @@
+// Alumni of NANMS UDUS, from ALUMNI_NANMS_UDUS.docx (2025 list). 81 named alumni, newest class first.
+// Fields match AlumniCard.jsx: name, title, cover_pic_url, class, current_title, current_practice_location, desc.
+//
+// Cover pictures come from src/assets/gallery/Alumni (any capitalisation). Each image is matched to a person automatically from its
+// FILE NAME, which should contain the title, the name and the class, e.g.  Dr. Isah Idris Haruna (Class of 2022).jpg
+// Matching ignores capitalisation, "Dr."/"Prof.", punctuation and word order, and needs the same class year.
+// Anyone without a matching image gets PLACEHOLDER. In development, the console lists unmatched images/people.
 
+// Folder and file names may use any capitals (Alumni, alumni, ...): Linux builds on Vercel are case-sensitive,
+// so every image in assets/gallery is collected and the folder is picked by its lower-case name below.
+const ALUMNI_FOLDER = "alumni";
 
-import placeholder from "../../assets/gallery/alumni/placeholder.jpg"; // <-- add this image (or change the path)
+// Path starts with /src = from the project root, so this file can live in any folder.
+const allImages = import.meta.glob("/src/assets/gallery/*/*.{jpg,jpeg,png,webp,gif,svg,avif,JPG,JPEG,PNG,WEBP,GIF,SVG,AVIF}", { eager: true, import: "default" });
 
-const PLACEHOLDER = placeholder;
-const IMAGE_FOLDER = "../../assets/gallery/alumni/";
+const folderOf = path => path.split("/").slice(-2, -1)[0] || "";
+const images = Object.fromEntries(Object.entries(allImages).filter(([path]) => folderOf(path).toLowerCase() === ALUMNI_FOLDER));
 
-
-const images = import.meta.glob("../../assets/gallery/alumni/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}", { eager: true, import: "default" });
+// Placeholder: a file called placeholder.* inside the alumni folder if you add one, otherwise a built-in grey avatar.
+const BUILT_IN_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='#d9dde3'/><circle cx='50' cy='38' r='18' fill='#9aa3af'/><path d='M14 92c4-22 20-32 36-32s32 10 36 32z' fill='#9aa3af'/></svg>"
+);
+const placeholderEntry = Object.entries(images).find(([path]) => /^placeholder\./i.test(path.split("/").pop()));
+const PLACEHOLDER = placeholderEntry ? placeholderEntry[1] : BUILT_IN_PLACEHOLDER;
+if (placeholderEntry) delete images[placeholderEntry[0]];
+const IMAGE_FOLDER = "";
 
 const TITLE_WORDS = new Set(["dr", "prof", "professor", "mr", "mrs", "ms"]);
 
