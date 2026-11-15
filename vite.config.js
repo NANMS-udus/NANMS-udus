@@ -8,12 +8,12 @@ export default defineConfig({
     react(), 
     sitemap({
       hostname: 'https://nanms-udus.vercel.app',
-
+      outputDir: 'dist',
+      generateRobotsTxt: true,
       dynamicRoutes: [
         '/about',
         '/contact',
         '/news',
-        '/about',
         '/executives',
         '/patrons-alumni', 
         '/members',
