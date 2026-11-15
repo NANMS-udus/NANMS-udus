@@ -1,6 +1,6 @@
 import './About.css';
 import check from '../../assets/icons/check-circle.svg'
-import gallery from '../../utils/gallery'
+import gallery from '../../Utils/gallery'
 import { useState, useEffect } from 'react';
 
 export default function About() {
