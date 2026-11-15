@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(), 
     sitemap({
-      hostname: 'https://nanms-2.vercel.app',
+      hostname: 'https://nanms-udus.vercel.app',
 
       dynamicRoutes: [
         '/about',
