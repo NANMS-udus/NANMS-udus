@@ -26,10 +26,14 @@ export default function Pagination({ target, pageNo, setPageNo }) {
                 no >= (pageNo - 1) && no <= (pageNo + 1)
                   ? <button
                     key={crypto.randomUUID()}
-                    className={`page-btn label-md ${no === pageNo ? 'active' : ''}`}>
+                    className={`page-btn label-md ${no === pageNo ? 'active' : ''}`}
+                    onClick={() => {
+                      setPageNo(no)
+                    }}
+                  >
                     {no}
                   </button>
-                  : no === (pageNo + 2) || no === (pageNo + 2)
+                  : no === (pageNo - 2) || no === (pageNo + 2)
                     ? <span key={crypto.randomUUID()} className="page-dots">...</span>
                     : ''
               }

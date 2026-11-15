@@ -8,7 +8,8 @@
 // Answers are built from those records, so the bot cannot invent names or news.
 // Keep this module free of React hooks; navigation is supplied by Assistant.jsx.
 
-import { askScholar } from "./chatService";
+import { askScholar, reportQuestion, refreshAuthSession } from "./chatService";
+import { PROBLEMS, looksLikeCredentials, troubleshoot } from "./troubleshoot";
 
 // ---- Kept as exports so any other page that imports them keeps working ----------------
 export const LGAs = [
@@ -528,15 +529,19 @@ function offlineRespond(input, signedIn) {
     }
     return { text: `${OFFLINE_PREFIX}That looks related to the ${route.name} page.`, links: [{ label: `Open ${route.name}`, path: route.path }] };
   }
-  return { text: `${OFFLINE_PREFIX}I can still open pages for you. Try “take me to the news” or “open registration”, and please try your question again in a moment.` };
+  return {
+    text: `${OFFLINE_PREFIX}I can still open pages for you. Try “take me to the news” or “open registration”, and please try your question again in a moment.`,
+    unanswered: { reason: "ai_unavailable" }
+  };
 }
 
 // ---- Validate the plan the server returns (defence in depth) --------------------------------
 function cleanPlan(raw) {
   const plan = raw && typeof raw === "object" ? raw : {};
-  const action = ["navigate", "search", "answer", "clarify", "unsupported"].includes(plan.action) ? plan.action : "clarify";
+  const action = ["navigate", "search", "answer", "clarify", "unsupported", "general", "login", "logout", "troubleshoot"].includes(plan.action) ? plan.action : "clarify";
   return {
     action,
+    problem: PROBLEMS.includes(plan.problem) ? plan.problem : "other",
     destination: isAllowedPath(plan.destination) ? plan.destination : null,
     searchTarget: TARGETS.includes(plan.searchTarget) ? plan.searchTarget : null,
     searchQuery: typeof plan.searchQuery === "string" ? plan.searchQuery.slice(0, 100) : null,
@@ -546,7 +551,7 @@ function cleanPlan(raw) {
 
 // ---- Public API used by the components ---------------------------------------------------------
 const STORAGE_KEY = "nanms-scholar-ai-messages";
-export const WELCOME_TEXT = "Salam and greetings! Welcome to NANMS Scholar AI. Ask me anything about NANMS in your own words. I can answer questions, find news and executives, and take you to the right page.";
+export const WELCOME_TEXT = "Salam and greetings! I'm PowerBot. Ask me anything about NANMS in your own words. I can answer questions, find news and executives, take you to the right page, sign you in or out, and help fix problems. Signed-in members can also ask general questions.";
 
 const welcomeMessage = () => ({ id: "welcome", sender: "ai", text: WELCOME_TEXT, timestamp: new Date().toISOString() });
 
@@ -566,7 +571,7 @@ export const assistant = {
   saveMsgs(messages) {
     try {
       const serializable = messages
-        .filter(message => !message.isPrivate) // never keep member-only answers in the browser
+        .filter(message => !message.isPrivate && !message.ui) // never keep member-only answers or sign-in forms in the browser
         .map(({ id, sender, text, timestamp, links, isError }) => ({ id, sender, text, timestamp, links, isError }));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable.slice(-60)));
     } catch (error) {
@@ -589,7 +594,17 @@ export const assistant = {
   async respond(input, { history = [], context = null, session = null, data = {} } = {}) {
     const signedIn = Boolean(session);
 
+    // Safety net: credentials typed into the chat are never sent to the AI.
+    if (looksLikeCredentials(input)) {
+      return {
+        text: "For your safety, please don't type your password in the chat. Use the secure sign-in form below instead.",
+        ui: { type: "login" }
+      };
+    }
+
     let plan;
+    let answer = "";
+    let loginRequired = false;
     try {
       const res = await askScholar({ message: input, history, context, signedIn });
       if (!res?.ok) {
@@ -599,9 +614,69 @@ export const assistant = {
         throw new Error(res?.error || "ai_failed");
       }
       plan = cleanPlan(res.plan);
+      answer = typeof res.answer === "string" ? res.answer.trim().slice(0, 2500) : "";
+      loginRequired = Boolean(res.loginRequired);
     } catch (error) {
       console.warn("NANMS Scholar AI request failed:", error);
       return offlineRespond(input, signedIn);
+    }
+
+    // ---- general questions (not about NANMS): signed-in members only.
+    // The server also verifies the login, so this cannot be bypassed from the browser.
+    if (plan.action === "general") {
+      if (!signedIn || loginRequired) {
+        return {
+          text: signedIn
+            ? "Your session may have expired. Please sign in again to ask general questions."
+            : "I can answer general questions for signed-in members. Please log in and ask me again.",
+          links: [{ label: "Go to login", path: "/members/login" }]
+        };
+      }
+      if (!answer) {
+        return {
+          text: "I couldn't answer that right now. Please try again in a moment.",
+          isError: true,
+          unanswered: { reason: "ai_error" }
+        };
+      }
+      return { text: `${answer}\n\n(General answer, not from NANMS records.)` };
+    }
+
+    // ---- sign in / sign out, done inside the chat (passwords go straight to the sign-in system, never to the AI)
+    if (plan.action === "login") {
+      if (signedIn) {
+        return {
+          text: "You're already signed in. Would you like to open your dashboard?",
+          links: [{ label: "Open my dashboard", path: "/members/dashboard" }]
+        };
+      }
+      return {
+        text: "Sure. Please enter your email and password in the form below. They go straight to the sign-in system and never through this chat.",
+        ui: { type: "login" }
+      };
+    }
+    if (plan.action === "logout") {
+      if (!signedIn) return { text: "You're not signed in right now, so there's nothing to log out of." };
+      return {
+        text: "Do you want me to log you out?",
+        ui: {
+          type: "buttons",
+          buttons: [
+            { label: "Yes, log me out", action: "logout_confirm" },
+            { label: "Cancel", action: "dismiss" }
+          ]
+        }
+      };
+    }
+
+    // ---- troubleshooting: the AI picks the problem type, the fix text is fixed and checked
+    if (plan.action === "troubleshoot") {
+      const guide = troubleshoot(plan.problem, { data, signedIn, question: input });
+      return {
+        text: guide.text,
+        links: guide.links,
+        ui: guide.buttons?.length ? { type: "buttons", buttons: guide.buttons } : null
+      };
     }
 
     // ---- navigation
@@ -651,11 +726,39 @@ export const assistant = {
         text: found.text,
         links,
         isPrivate: isMemberOnly,
-        context: { lastSubject: { target, items: found.items } }
+        context: { lastSubject: { target, items: found.items } },
+        // Nothing found: this is a question PowerBot could not answer.
+        ...(found.found === false ? { unanswered: { reason: "no_results" } } : {})
       };
     }
 
     // ---- answer / clarify / unsupported
-    return { text: plan.response || "How can I help you with the NANMS website?" };
+    return {
+      text: plan.response || "How can I help you with the NANMS website?",
+      ...(plan.action === "unsupported" ? { unanswered: { reason: "unsupported" } } : {})
+    };
+  },
+
+  looksLikeCredentials,
+
+  /** Asks the server to pass a question to the developer. Resolves { status }:
+   *  "sent" | "unavailable" | "not_configured" | "rate_limited" | "error". Never throws. */
+  async reportToDeveloper({ question, reason = "other", page = null }) {
+    try {
+      const res = await reportQuestion({ question, reason, page });
+      if (res?.ok && res.logged) return { status: "sent" };
+      if (res?.ok && res.available === false) return { status: "unavailable" };
+      if (res?.ok && res.configured === false) return { status: "not_configured" };
+      if (res?.error === "rate_limited") return { status: "rate_limited" };
+      return { status: "error" };
+    } catch (error) {
+      console.warn("Could not reach the developer inbox:", error);
+      return { status: "error" };
+    }
+  },
+
+  /** Tries to refresh the member's sign-in token. Resolves { ok }. */
+  async refreshSession() {
+    return refreshAuthSession();
   }
 };

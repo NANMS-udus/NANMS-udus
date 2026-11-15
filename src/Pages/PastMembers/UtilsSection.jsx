@@ -14,7 +14,7 @@ export default function UtilsSection({ def, target, filterParams, setterFun }) {
       type="text"
       onChange={(e) => {
        const result = target.filter(itm => {
-        return itm.name === e.target.value
+        return itm?.name?.toLowerCase().includes(e.target.value.toLowerCase())
        })
 
        if (result.length) {
@@ -43,14 +43,18 @@ export default function UtilsSection({ def, target, filterParams, setterFun }) {
         onChange={(e) => {
          const newVal = e.target.value
          const result = target.filter(itm => {
-          return itm[fp] === newVal
+          return itm[fp] === Number(newVal) 
          })
+         
 
          if (newVal === 'all') {
           setterFun(def)
+
+          return
          }
 
          if (result.length) {
+          
           setterFun(result)
          }
         }}

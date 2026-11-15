@@ -8,8 +8,8 @@ export default function Main() {
  return (
   <main class="main-wrapper">
    <PatronsGrid />
-   <PresidentsGrid />
    <AlumniGrid />
+   <PresidentsGrid />
    <div class="connect-banner">
     <h2>Are You a NANMS Graduate?</h2>
     <p>Stay connected with your alma mater, mentor aspiring medical practitioners, and contribute to our annual
