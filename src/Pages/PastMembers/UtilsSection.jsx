@@ -43,7 +43,7 @@ export default function UtilsSection({ def, target, filterParams, setterFun }) {
         onChange={(e) => {
          const newVal = e.target.value
          const result = target.filter(itm => {
-          return itm[fp] === Number(newVal) 
+          return itm[fp].toString().includes(newVal.toString())
          })
          
 
@@ -54,6 +54,7 @@ export default function UtilsSection({ def, target, filterParams, setterFun }) {
          }
 
          if (result.length) {
+          console.log(result);
           
           setterFun(result)
          }

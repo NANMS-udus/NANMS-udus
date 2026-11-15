@@ -11,6 +11,8 @@ import { GenContext } from "../../../../../../MyContexts/GenContexts";
 import { PortalContext } from "../../../../../../MyContexts/PortalContext";
 import Messages from "./Messages";
 import { assistant } from "../../../../../../Utils/data";
+import refresh from "../../../../../../assets/icons/reload.svg";
+import down from "../../../../../../assets/icons/chevron-down.svg";
 
 const MAX_LEN = 500;
 const HISTORY_TURNS = 6;
@@ -284,8 +286,8 @@ export default function Assistant() {
               </div>
             </div>
             <div style={{ display: "flex", gap: 6 }}>
-              <button type="button" onClick={clearChat} className="header-ctrl-btn" title="Clear chat" aria-label="Clear chat">↻</button>
-              <button type="button" onClick={() => setShowbot(false)} className="header-ctrl-btn" title="Close chat" aria-label="Close chat">⌄</button>
+              <button type="button" onClick={clearChat} className="header-ctrl-btn" title="Clear chat" aria-label="Clear chat"><img src={refresh} alt="" /></button>
+              <button type="button" onClick={() => setShowbot(false)} className="header-ctrl-btn" title="Close chat" aria-label="Close chat"><img src={down} alt="" /></button>
             </div>
           </header>
           <div className="chat-sub-bar">

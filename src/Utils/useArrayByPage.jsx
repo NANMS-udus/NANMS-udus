@@ -27,7 +27,7 @@ export default function useArrayByPage(target, pageLength, startVal) {
     }
 
     arrange()
-  }, [])
+  }, [target])
 
   return [result]
 

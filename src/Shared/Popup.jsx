@@ -19,8 +19,6 @@ export default function Popup() {
         }, 6000)
 
         const s = setTimeout(() => {
-            console.log('s', popup);
-
             removePopup()
         }, 10000);
 

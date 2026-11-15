@@ -85,9 +85,11 @@ export default function Auth({ children }) {
     console.log(recent_postings, research_interests, positions_held);
 
     try {
-      let avatar_url = 'placeholder Url'
+      let avatar_url
 
-      let avatarPath = 'placeholder path'
+      let avatarPath
+
+      const uploadAvatar = avatar.size && avatar.name && true || false
 
       if (password !== password2) {
         throw new Error("Passwords do not match");
@@ -105,6 +107,7 @@ export default function Auth({ children }) {
             avatar_path: avatarPath,
             date_admitted,
             email,
+            uploadAvatar,
             phone,
             bio,
             LGA,
@@ -151,10 +154,9 @@ export default function Auth({ children }) {
 
         }
 
-        if (avatar.size && avatar.name) {
-          console.log('uploading data');
+        if (uploadAvatar) {
 
-          const { data: myDet, error: detError } = supabase.rpc('get_my_member')
+          const { data: myDet, error: detError } = await supabase.rpc('get_my_member', {member_data: { id: signUpData.user.id }}).single()
 
           if (detError) {
             throw new Error(detError.message);
@@ -162,6 +164,7 @@ export default function Auth({ children }) {
           }
 
           if (!detError && myDet) {
+
             const { data: uploadData, error: uploadError } = await supabase.storage.from(`avatars`).upload(myDet.avatar_path, avatar)
 
             if (uploadError) {
@@ -171,147 +174,213 @@ export default function Auth({ children }) {
             if (!uploadError && uploadData) {
               console.log('uploaded', uploadData);
 
-              avatar_url = await supabase.storage.from(`avatars`).getPublicUrl(uploadData.path).data.publicUrl
-
-              avatarPath = uploadData.path
-
-              console.log(avatarPath, avatar_url);
-
-
-              const { data: data3, error: error3 } = await supabase.from('members').update({ avatar_url }).eq('id', signUpData.user.id).select('*').single()
-
-              if (error3) {
-                showPopup('err', 'Your profile picture could not be uploaded')
-              }
-
-              if (!error3 && data3) {
-                console.log(data3);
-
-                setDetails(data3)
-              }
+              setDetails(myDet)
             }
+          }
+            /*  */
+
+            /* if (!detError && myDet) {
+              const { data: uploadData, error: uploadError } = await supabase.storage.from(`avatars`).upload(myDet.avatar_path, avatar)
+  
+              if (uploadError) {
+                throw new Error(uploadError.message);
+              }
+  
+              if (!uploadError && uploadData) {
+                console.log('uploaded', uploadData);
+  
+                avatar_url = await supabase.storage.from(`avatars`).getPublicUrl(uploadData.path).data.publicUrl
+  
+                avatarPath = uploadData.path
+  
+                console.log(avatarPath, avatar_url);
+  
+  
+                const { data: data3, error: error3 } = await supabase.from('members').update({ avatar_url }).eq('id', signUpData.user.id).select('*').single()
+  
+                if (error3) {
+                  showPopup('err', 'Your profile picture could not be uploaded')
+                }
+  
+                if (!error3 && data3) {
+                  console.log(data3);
+  
+                  setDetails(data3)
+                }
+              }
+            } */
+          }
+
+          return { success: true, message: 'your account has been successfuly created' }
+        }
+
+
+        setPositionsHeld([])
+        setRecentPostings([])
+        setResearchIntrests([])
+
+      } catch (error) {
+        console.log(error.message);
+
+        return { success: false, message: error.message }
+      }
+
+    }
+
+  async function signIn(prev, input) {
+      const entries = Object.fromEntries(input)
+
+      console.log(entries);
+
+      try {
+
+        const { data, error } = await supabase.auth.signInWithPassword(entries)
+
+        if (error) {
+          showPopup('err', error.message)
+
+          throw new Error(error.message);
+        }
+
+        if (!error && data) {
+          console.log(data);
+
+          const { data: data2, error: error2 } = await studyDirBase.auth.signInWithPassword(entries)
+
+          if (error2) {
+
+            await supabase.auth.signOut()
+
+            showPopup('err', error2.message)
+
+            throw new Error(error2.message);
+          }
+
+          if (!error2 && data2) {
+
+            showPopup('success', 'signed in successfully')
+
+            setSession(data.session)
+
+            return
           }
         }
 
-        return { success: true, message: 'your account has been successfuly created' }
+      } catch (error) {
+        return { success: false, message: error.message }
       }
 
-
-      setPositionsHeld([])
-      setRecentPostings([])
-      setResearchIntrests([])
-
-    } catch (error) {
-      console.log(error.message);
-
-      return { success: false, message: error.message }
     }
 
-  }
+    async function signOut() {
+      try {
+        showPopup('pending', 'logging out')
 
-  async function signIn(prev, input) {
-    const entries = Object.fromEntries(input)
+        const { error } = await supabase.auth.signOut()
 
-    console.log(entries);
+        const { error: error2 } = await studyDirBase.auth.signOut()
 
-    try {
+        if (error || error2) {
+          showPopup('err', error.message || error2.message)
+          throw new Error(error.message || error2.message);
 
-      const { data, error } = await supabase.auth.signInWithPassword(entries)
-
-      if (error) {
-        showPopup('err', error.message)
-
-        throw new Error(error.message);
-      }
-
-      if (!error && data) {
-        console.log(data);
-
-        const { data: data2, error: error2 } = await studyDirBase.auth.signInWithPassword(entries)
-
-        if (error2) {
-
-          await supabase.auth.signOut()
-
-          showPopup('err', error2.message)
-
-          throw new Error(error2.message);
         }
 
-        if (!error2 && data2) {
-          
-          showPopup('success', 'signed in successfully')
-
-          setSession(data.session)
-
-          return
+        if (!error && !error2) {
+          showPopup('success', 'logged out')
+          setSession(null)
         }
-      }
+      } catch (error) {
+        console.log(error);
 
-    } catch (error) {
-      return { success: false, message: error.message }
+      }
     }
 
-  }
+    async function updtAvatar(prev, input) {
 
-  async function signOut() {
-    try {
-      showPopup('pending', 'logging out')
+      const { avatar } = Object.fromEntries(input)
 
-      const { error } = await supabase.auth.signOut()
+      console.log(avatar);
 
-      const { error: error2 } = await studyDirBase.auth.signOut()
+      let avatar_url = myDetails.avatar_url
 
-      if (error || error2) {
-        showPopup('err', error.message || error2.message)
-        throw new Error(error.message || error2.message);
+      let avatar_path = myDetails.avatar_path
+
+      try {
+        if (avatar.size) {
+          const { data: updtData, error: updtError } = await supabase.storage.from('avatars').upload(myDetails.avatar_path, avatar, { upsert: true })
+
+          if (updtError) {
+            throw new Error(updtError.message);
+          }
+
+          if (!updtError && updtData) {
+            console.log(updtData);
+
+            avatar_path = updtData.path
+
+            avatar_url = supabase.storage.from('avatars').getPublicUrl(updtData.path).data.publicUrl
+
+          }
+
+          console.log(avatar_path, avatar_url);
+
+          const { data, error } = await supabase.from('members').update({
+            avatar_url,
+            avatar_path
+          })
+            .eq('id', session?.user?.id)
+            .select()
+            .single()
+
+          if (error) {
+            throw new Error(error.message);
+          }
+
+          if (!error && data) {
+            console.log(data);
+
+            showPopup('success', 'Your avatar has been updated successfuly')
+
+            setDetails(data)
+          }
+
+        }
+      } catch (error) {
+        console.log(error.message);
 
       }
 
-      if (!error && !error2) {
-        showPopup('success', 'logged out')
-        setSession(null)
-      }
-    } catch (error) {
-      console.log(error);
 
     }
-  }
 
-  async function updtAvatar(prev, input) {
+    async function editProfile(prev, input) {
 
-    const { avatar } = Object.fromEntries(input)
+      const entries = Object.fromEntries(input)
 
-    console.log(avatar);
+      console.log(entries);
 
-    let avatar_url = myDetails.avatar_url
+      const {
+        fullname,
+        phone,
+        date_admitted,
+        bio,
+        level,
+        LGA,
+      } = entries
 
-    let avatar_path = myDetails.avatar_path
-
-    try {
-      if (avatar.size) {
-        const { data: updtData, error: updtError } = await supabase.storage.from('avatars').upload(myDetails.avatar_path, avatar, { upsert: true })
-
-        if (updtError) {
-          throw new Error(updtError.message);
-        }
-
-        if (!updtError && updtData) {
-          console.log(updtData);
-
-          avatar_path = updtData.path
-
-          avatar_url = supabase.storage.from('avatars').getPublicUrl(updtData.path).data.publicUrl
-
-        }
-
-        console.log(avatar_path, avatar_url);
-
+      try {
         const { data, error } = await supabase.from('members').update({
-          avatar_url,
-          avatar_path
+          fullname,
+          phone,
+          date_admitted: dayjs(date_admitted).format(''),
+          bio,
+          level,
+          LGA,
+          research_interests,
+          recent_postings
         })
-          .eq('id', session?.user?.id)
+          .eq('id', session.user.id)
           .select()
           .single()
 
@@ -322,85 +391,34 @@ export default function Auth({ children }) {
         if (!error && data) {
           console.log(data);
 
-          showPopup('success', 'Your avatar has been updated successfuly')
-
           setDetails(data)
+
+          return { success: true, message: 'Your profile details have been updated successfuly' }
+
         }
-
+      } catch (error) {
+        return { success: false, message: error.message }
       }
-    } catch (error) {
-      console.log(error.message);
-
     }
 
 
-  }
-
-  async function editProfile(prev, input) {
-
-    const entries = Object.fromEntries(input)
-
-    console.log(entries);
-
-    const {
-      fullname,
-      phone,
-      date_admitted,
-      bio,
-      level,
-      LGA,
-    } = entries
-
-    try {
-      const { data, error } = await supabase.from('members').update({
-        fullname,
-        phone,
-        date_admitted: dayjs(date_admitted).format(''),
-        bio,
-        level,
-        LGA,
+    return (
+      <AuthContext.Provider value={{
+        session,
+        myDetails,
+        signUp,
+        signIn,
+        signOut,
+        updtAvatar,
+        editProfile,
+        positions_held,
+        setPositionsHeld,
         research_interests,
-        recent_postings
-      })
-        .eq('id', session.user.id)
-        .select()
-        .single()
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (!error && data) {
-        console.log(data);
-
-        setDetails(data)
-
-        return { success: true, message: 'Your profile details have been updated successfuly' }
-
-      }
-    } catch (error) {
-      return { success: false, message: error.message }
-    }
-  }
-
-
-  return (
-    <AuthContext.Provider value={{
-      session,
-      myDetails,
-      signUp,
-      signIn,
-      signOut,
-      updtAvatar,
-      editProfile,
-      positions_held,
-      setPositionsHeld,
-      research_interests,
-      setResearchIntrests,
-      recent_postings,
-      setRecentPostings
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+        setResearchIntrests,
+        recent_postings,
+        setRecentPostings
+      }}>
+        {children}
+      </AuthContext.Provider>
+    );
+  };

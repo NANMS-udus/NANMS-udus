@@ -8,10 +8,7 @@ export default function News() {
 
   const { news } = useContext(GenContext)
 
-  const newsSrtd = news.sort((a, b) => dayjs(b).valueOf() - dayjs(b).valueOf())
-
-  console.log(newsSrtd);
-
+  const newsSrtd = news.sort((a, b) => dayjs(b).valueOf() - dayjs(a).valueOf());
 
   return (
     <section id="news">

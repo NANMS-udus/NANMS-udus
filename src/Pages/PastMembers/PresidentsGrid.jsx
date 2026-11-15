@@ -5,24 +5,31 @@ import { GenContext } from '../../MyContexts/GenContexts';
 import PresidentCard from './PresidentCard';
 import UtilsSection from './UtilsSection';
 import useArrayByPage from '../../Utils/useArrayByPage';
+import presidents from '../../Utils/presidentsData';
 
 export default function PresidentsGrid() {
 
-  const { presidents } = useContext(GenContext)
+  const { presidents: presidentsOnline } = useContext(GenContext)
+
+  const allPresidents = [ ...presidentsOnline, ...presidents ]
 
   const [pageNo, setPageNo] = useState(1)
 
-  const [displayed, setDisplayed] = useState(presidents)
+  const [displayed, setDisplayed] = useState(allPresidents)
 
-  useEffect(() => {
+  /* useEffect(() => {
     function updateDisplayed() {
-      setDisplayed(presidents)
+      setDisplayed(allPresidents)
     }
 
     updateDisplayed()
-  }, [presidents])
+  }, [presidents]) */
 
   const [presByPage] = useArrayByPage(displayed, 6, [])
+
+  useEffect(() => {
+   console.log(displayed, presByPage);
+  }, [displayed])
 
   return (
     <section class="section-block">
