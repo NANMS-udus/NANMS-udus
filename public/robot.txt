@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /members/dashboard
+
+Sitemap: https://nanms-udus.vercel.app/sitemap.xml
