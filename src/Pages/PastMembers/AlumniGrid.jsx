@@ -5,7 +5,7 @@ import { GenContext } from '../../MyContexts/GenContexts';
 import AlumniCard from './AlumniCard';
 import UtilsSection from './UtilsSection';
 import useArrayByPage from '../../Utils/useArrayByPage';
-import alumni from '../../Utils/PastMembers/AlumniData';
+import alumni from '../../Utils/AlumniData';
 
 export default function AlumniGrid() {
 

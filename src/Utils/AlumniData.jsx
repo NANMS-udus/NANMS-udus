@@ -1,13 +1,4 @@
-// Alumni of NANMS UDUS, from ALUMNI_NANMS_UDUS.docx (2025 list). 81 named alumni, newest class first.
-// Fields match AlumniCard.jsx: name, title, cover_pic_url, class, current_title, current_practice_location, desc.
-//
-// Cover pictures come from src/assets/gallery/Alumni (any capitalisation). Each image is matched to a person automatically from its
-// FILE NAME, which should contain the title, the name and the class, e.g.  Dr. Isah Idris Haruna (Class of 2022).jpg
-// Matching ignores capitalisation, "Dr."/"Prof.", punctuation and word order, and needs the same class year.
-// Anyone without a matching image gets PLACEHOLDER. In development, the console lists unmatched images/people.
 
-// Folder and file names may use any capitals (Alumni, alumni, ...): Linux builds on Vercel are case-sensitive,
-// so every image in assets/gallery is collected and the folder is picked by its lower-case name below.
 const ALUMNI_FOLDER = "alumni";
 
 // Path starts with /src = from the project root, so this file can live in any folder.
